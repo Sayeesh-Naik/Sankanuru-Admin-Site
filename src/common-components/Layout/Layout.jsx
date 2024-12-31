@@ -19,7 +19,7 @@ const Layout = ({ children }) => {
             <Grid item xs={12} sx={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
                 <Header openSidebar={openSidebar} handleSidebarToggle={handleSidebarToggle} />
 
-                <Box className="dashboard-body-container" sx={{marginLeft: openSidebar ? '240px' : '0', transition: openSidebar ? 'margin-left 0.3s': ''}}>
+                <Box className={children.type.name == 'LoginPage' ? "dashboard-body-login-container" : "dashboard-body-container"} sx={{marginLeft: openSidebar ? '240px' : '0', transition: openSidebar ? 'margin-left 0.3s': ''}}>
                     {children}
                 </Box>
             </Grid>

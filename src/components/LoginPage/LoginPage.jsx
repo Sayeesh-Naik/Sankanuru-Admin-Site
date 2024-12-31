@@ -49,7 +49,7 @@ const LoginPage = () => {
     };
 
     return (
-        <Grid container justifyContent="center" alignItems="center" style={{ height: '100%',overflow:'hidden', background: 'linear-gradient(135deg,rgb(109, 4, 4) 0%, #e2f3f5 100%)' }}>
+        <Grid container justifyContent="center" alignItems="center" style={{ height: '100%',overflow:'hidden'}}>
             <Paper elevation={10} style={paperStyle}>
                 <Grid align='center'>
                     <Avatar style={avatarStyle}><LockOutlinedIcon /></Avatar>
@@ -87,12 +87,12 @@ const LoginPage = () => {
                     }}
                 />
                 <Button type='submit' color='primary' variant='contained' style={btnStyle} fullWidth>Sign in</Button>
-                <Typography>
+                <Typography textAlign={'center'} m={2}>
                     <Link href="#" style={{ color: 'white' }}>
                         Forgot password ?
                     </Link>
                 </Typography>
-                <Typography style={{ color: 'white' }}> Do you have an account ?
+                <Typography textAlign={'center'} style={{ color: 'white' }}> Do you have an account ?
                     <Link href="#" style={{ color: 'white' }}>
                         Sign Up
                     </Link>

@@ -22,7 +22,7 @@ const Header = ({ openSidebar, handleSidebarToggle }) => (
             <MenuIcon />
         </IconButton>
 
-        <Typography variant="h5">Sankanuru Admin Portal</Typography>
+        <Typography variant="h5">Sankanur Admin Portal</Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Avatar sx={{ marginRight: 1, backgroundColor: '#1bbd7e' }}>

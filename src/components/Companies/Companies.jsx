@@ -32,7 +32,7 @@ export default function Companies() {
                                 <Typography variant='h5' fontWeight={'600'}>
                                     {comp.title}
                                 </Typography>
-                                <Link href="/login" sx={{width: 'fit-content'}}>
+                                <Link href="/login" onClick={(e)=> e.stopPropagation()} sx={{width: 'fit-content'}}>
                                     Login to the Portal
                                 </Link>
                             </CardContent>

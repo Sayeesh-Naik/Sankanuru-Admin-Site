@@ -1,5 +1,8 @@
 import LoginPage from "./components/LoginPage/LoginPage";
 import Companies from "./components/Companies/Companies";
+import PostEventNew from "./components/PostEventNew/PostEventNew";
+import PreEventNew from "./components/PreEventNew/PreEventNew";
+import PostEventTable from "./components/PostEventTable/PostEventTable";
 
 const routerData = [
     {
@@ -20,7 +23,7 @@ const routerData = [
     {
         name: 'Home Page',
         path: '/nursing/home',
-        component: <>Nurcing Home</>
+        component: <>Nursing Home Page</>
     },
     {
         name: 'About Us',
@@ -28,14 +31,24 @@ const routerData = [
         component: <>Nursing About Us</>
     },
     {
-        name: 'Pre Event',
-        path: '/nursing/pre-event',
-        component: <>Nurcing Pre Event</>
+        name: 'Pre Event New',
+        path: '/nursing/pre-event-new',
+        component: <PreEventNew/>
     },
     {
-        name: 'Post Event',
-        path: '/nursing/post-event',
-        component: <>Nurcing Post Event</>
+        name: 'Pre Event Table',
+        path: '/nursing/pre-event-table',
+        component: <PreEventNew/>
+    },
+    {
+        name: 'Post Event New',
+        path: '/nursing/post-event-new',
+        component: <PostEventNew/>
+    },
+    {
+        name: 'Post Event Table',
+        path: '/nursing/post-event-table',
+        component: <PostEventTable/>
     },
 ]
 
