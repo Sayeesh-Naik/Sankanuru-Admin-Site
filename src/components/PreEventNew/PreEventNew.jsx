@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Grid, Box, Button, TextField, Typography, ThemeProvider, createTheme } from '@mui/material';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -6,10 +6,19 @@ import { uploadImageToCloudinary } from '../../services/cloudinary';
 import { LocalizationProvider, TimePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { apiPost } from '../../services/api-service';
+import { insertPreNewEventConst, updatePreEventConst } from '../../services/api-constants';
+import Loader from '../../common-components/Loader/Loader';
+import PopUp from '../../common-components/PopUp/PopUp';
 
-function PostEventNew() {
-  // Initialize state with dynamic keys (name-based structure)
-  const [formData, setFormData] = useState({
+function PreEventNew({propsData}) {
+
+  const navigate = useNavigate()
+  const location = useLocation();
+  const initialData = location.state?.tableData;
+  
+  const defaultData = {
     title: '',
     description: '',
     content: '',
@@ -21,10 +30,40 @@ function PostEventNew() {
     speaker3: '',
     speaker4: '',
     date: '',
-    time: dayjs() // Initialize time as current dayjs object
-  });
+    time: dayjs() 
+  }
+  
+  const [formData, setFormData] = useState(defaultData);
+  const [isLoading, setIsLoading] = useState(false);
+  const [localImages, setLocalImages] = useState([]);
+  const [dynamicApiURL, setDynamicApiURL] = useState(insertPreNewEventConst);
+  const [popUpInstance, setPopUpInstance] = useState({open: false, status: 'error', message: '' });
 
-  // Dynamically update form data
+  useEffect(() => {
+    console.log('prevv = ', initialData)
+
+    if (initialData && propsData) {
+      initialData['time'] = dayjs();
+      setFormData(initialData);
+
+      let allImgData = initialData['images']
+      let dynamicImg = [];
+      allImgData.map((img, index)=>{
+        dynamicImg.push(Object.values(img));
+      })
+      setLocalImages(dynamicImg)
+
+      setDynamicApiURL(updatePreEventConst)
+
+  
+    } else {
+      setFormData(defaultData)
+      setDynamicApiURL(insertPreNewEventConst)
+    }
+
+    console.log('dataneww = ', formData)
+  }, [initialData]); 
+
   const updateFormData = (name, value) => {
     setFormData((prevState) => ({
       ...prevState,
@@ -32,43 +71,71 @@ function PostEventNew() {
     }));
   };
 
-  // Handle image upload for specific image index
+  const handleLocalImagePreview = (file, index) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const updatedLocalImages = [...localImages];
+      updatedLocalImages[index] = reader.result;
+      setLocalImages(updatedLocalImages);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleImageUpload = async (file, index) => {
     if (file) {
-      const imageUrl = await uploadImageToCloudinary(file); // Upload image to Cloudinary
-      if (imageUrl) {
-        const updatedImages = [...formData.images];
-        updatedImages[index] = { [`img${index + 1}`]: imageUrl };
-        updateFormData('images', updatedImages); // Update the images state dynamically
-      }
+      handleLocalImagePreview(file, index);
     }
   };
 
-  // Trigger file input click
   const handleBoxClick = (index) => {
     document.getElementById(`upload-button-${index}`).click();
   };
 
-  // Handle image drag-and-drop
   const handleImageDrop = (e, index) => {
     e.preventDefault();
-    const file = e.dataTransfer.files[0]; // Get the first dropped file
-    handleImageUpload(file, index); // Upload the dropped file
+    const file = e.dataTransfer.files[0];
+    handleImageUpload(file, index);
   };
 
-  // Handle drag over event to allow dropping
   const handleDragOver = (e) => {
-    e.preventDefault(); // Prevent the default behavior to allow drop
+    e.preventDefault();
   };
 
-  // Handle form submission
-  const handleSubmit = () => {
-    const formattedTime = formData.time.format('hh:mm A'); // Format time as 'Hr:Mm AM/PM'
-    const updatedFormData = {
-      ...formData,
-      time: formattedTime, // Update time field in formData to the formatted string
-    };
-    console.log('Form Data on Submit:', JSON.stringify(updatedFormData, null, 2)); // Log the form data
+  const addNewRecordToDB = (insertingData)=> {
+    const response = apiPost(dynamicApiURL, insertingData);
+  }
+
+  const handleSubmit = async () => {
+    setIsLoading(true);
+    try {
+      const uploadedImages = await Promise.all(
+        localImages.map(async (localImage, index) => {
+          const fileInput = document.getElementById(`upload-button-${index}`);
+          if (fileInput && fileInput.files[0]) {
+            const uploadedUrl = await uploadImageToCloudinary(fileInput.files[0]);
+            return { [`img${index + 1}`]: uploadedUrl };
+          }
+          return formData.images[index];
+        })
+      );
+
+      const formattedTime = formData.time.format('hh:mm A');
+      const updatedFormData = {
+        ...formData,
+        images: uploadedImages,
+        time: formattedTime,
+      };
+
+      console.log('Form Data on Submit:', updatedFormData);
+
+      addNewRecordToDB(updatedFormData);
+      setIsLoading(false);
+      setPopUpInstance({open: true, status: 'success', message: 'Data Updated Successfully !!'})
+
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      setIsLoading(false);
+    }
   };
 
   const theme = createTheme({
@@ -76,7 +143,7 @@ function PostEventNew() {
       MuiTextField: {
         styleOverrides: {
           root: {
-            backgroundColor: 'white', // Set background color to white
+            backgroundColor: 'white',
           },
         },
       },
@@ -85,14 +152,27 @@ function PostEventNew() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Typography mb={2} variant="h4" fontWeight="bold">Create Post Event</Typography>
+      {isLoading && <Loader/>}
+      {popUpInstance.open && <PopUp status={popUpInstance.status} message={popUpInstance.message}/>}
+
+       <Box display={'flex'} justifyContent="space-between" mb={1}>
+              <Typography variant="h5" fontWeight={'bold'}>
+                Pre Event Table
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={()=>navigate('/nursing/pre-event-table')}
+                sx={{ background: 'var(--mainBg)', color: 'white', fontWeight: 'bold' }}
+              >
+                Show Pre Event Table
+              </Button>
+      </Box>
       <Grid container spacing={3}>
-        {/* Image Upload Section */}
         <Grid item xs={12}>
           <Typography variant="h6" mb={1}>Browse File or Drag and Drop</Typography>
           <Grid container spacing={2}>
             {formData.images.map((imageObj, index) => (
-              <Grid item xs={6} key={index} textAlign="center">
+              <Grid item xs={4} key={index} textAlign="center">
                 <Box
                   sx={{
                     width: '100%',
@@ -104,13 +184,13 @@ function PostEventNew() {
                     cursor: 'pointer',
                     background: 'rgb(225, 244, 255)'
                   }}
-                  onClick={() => handleBoxClick(index)} // Trigger file input on Box click
-                  onDrop={(e) => handleImageDrop(e, index)} // Handle image drop
-                  onDragOver={handleDragOver} // Allow drag over
+                  onClick={() => handleBoxClick(index)}
+                  onDrop={(e) => handleImageDrop(e, index)}
+                  onDragOver={handleDragOver}
                 >
-                  {imageObj[`img${index + 1}`] ? (
+                  {localImages[index] ? (
                     <img
-                      src={imageObj[`img${index + 1}`]}
+                      src={localImages[index]}
                       alt={`upload-preview-${index}`}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
@@ -125,17 +205,17 @@ function PostEventNew() {
                     id={`upload-button-${index}`}
                   />
                 </Box>
-                {imageObj[`img${index + 1}`] && (
+                {localImages[index] && (
                   <Button
                     onClick={() => {
-                      const updatedImages = [...formData.images];
-                      updatedImages[index] = { [`img${index + 1}`]: null };  // Reset image
-                      updateFormData('images', updatedImages); 
+                      // const updatedImages = [...formData.images];
+                      // updatedImages[index] = { [`img${index + 1}`]: null };  // Reset image
+                      // updateFormData('images', updatedImages); 
                       handleBoxClick(index);
                     }}
                     variant="outlined"
                     fullWidth
-                    style={{ marginTop: '10px', background: 'rgb(225, 244, 255)'}}
+                    style={{ marginTop: '10px', background: 'var(--mainBg)', color: 'white'}}
                   >
                     Re-upload
                   </Button>
@@ -229,4 +309,4 @@ function PostEventNew() {
   );
 }
 
-export default PostEventNew;
+export default PreEventNew;

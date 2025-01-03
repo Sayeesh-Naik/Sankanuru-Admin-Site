@@ -7,14 +7,16 @@ import { LocalizationProvider, TimePicker } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { apiPost } from '../../services/api-service';
+import { insertPostNewEventConst, updatePostEventConst } from '../../services/api-constants';
 
-function PostEventNew() {
+function PostEventNew({propsData}) {
 
   const navigate = useNavigate()
   const location = useLocation();
   const initialData = location.state?.tableData;
    
-  const [formData, setFormData] = useState({
+  const defaultData = {
     title: '',
     description: '',
     content: '',
@@ -29,147 +31,173 @@ function PostEventNew() {
     speaker4: '',
     date: '',
     time: dayjs() // Initialize time as current dayjs object
-  });
+  }
 
-  // Use useEffect to populate the form data when initialData is available
-  useEffect(() => {
-    
-    if (initialData) {
+  const [formData, setFormData] = useState(defaultData);
+  const [loading, setLoading] = useState(false);
+  const [dynamicApiURL, setDynamicApiURL] = useState(insertPostNewEventConst);
+
+   const [localImages, setLocalImages] = useState([]);
+  
+    useEffect(() => {
+      if (initialData && propsData) {
+        initialData['time'] = dayjs();
+        setFormData(initialData);
+  
+        let allImgData = initialData['images']
+        let dynamicImg = [];
+        allImgData.map((img, index)=>{
+          dynamicImg.push(Object.values(img));
+        })
+        setLocalImages(dynamicImg)
+        setDynamicApiURL(updatePostEventConst)
+      } else {
+        setFormData(defaultData)
+        setDynamicApiURL(insertPostNewEventConst);
+      }
+    }, [propsData]); 
+  
+    const updateFormData = (name, value) => {
       setFormData((prevState) => ({
         ...prevState,
-        title: initialData.title || '',
-        description: initialData.description || '',
-        content: initialData.content || '',
-        images: initialData.images.map((imgObj, index) => ({
-          [`img${index + 1}`]: imgObj[`img${index + 1}`] || null
-        })),
-        speaker1: initialData.speaker1 || '',
-        speaker2: initialData.speaker2 || '',
-        speaker3: initialData.speaker3 || '',
-        speaker4: initialData.speaker4 || '',
-        date: initialData.date || '',
+        [name]: value
       }));
-    }
-  }, []); // This effect runs when `initialData` changes
-
-  // Dynamically update form data
-  const updateFormData = (name, value) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      [name]: value
-    }));
-  };
-
-  // Handle image upload for specific image index
-  const handleImageUpload = async (file, index) => {
-    if (file) {
-      const imageUrl = await uploadImageToCloudinary(file); // Upload image to Cloudinary
-      if (imageUrl) {
-        const updatedImages = [...formData.images];
-        updatedImages[index] = { [`img${index + 1}`]: imageUrl };
-        updateFormData('images', updatedImages); // Update the images state dynamically
-      }
-    }
-  };
-
-  // Trigger file input click
-  const handleBoxClick = (index) => {
-    document.getElementById(`upload-button-${index}`).click();
-  };
-
-  // Handle image drag-and-drop
-  const handleImageDrop = (e, index) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0]; // Get the first dropped file
-    handleImageUpload(file, index); // Upload the dropped file
-  };
-
-  // Handle drag over event to allow dropping
-  const handleDragOver = (e) => {
-    e.preventDefault(); // Prevent the default behavior to allow drop
-  };
-
-  // Handle form submission
-  const handleSubmit = () => {
-    const formattedTime = formData.time.format('hh:mm A'); // Format time as 'Hr:Mm AM/PM'
-    const updatedFormData = {
-      ...formData,
-      time: formattedTime, // Update time field in formData to the formatted string
     };
-    console.log('Form Data on Submit:', JSON.stringify(updatedFormData, null, 2)); // Log the form data
-  };
-
-  const theme = createTheme({
-    components: {
-      MuiTextField: {
-        styleOverrides: {
-          root: {
-            backgroundColor: 'white', // Set background color to white
+  
+    const handleLocalImagePreview = (file, index) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const updatedLocalImages = [...localImages];
+        updatedLocalImages[index] = reader.result;
+        setLocalImages(updatedLocalImages);
+      };
+      reader.readAsDataURL(file);
+    };
+  
+    const handleImageUpload = async (file, index) => {
+      if (file) {
+        handleLocalImagePreview(file, index);
+      }
+    };
+  
+    const handleBoxClick = (index) => {
+      document.getElementById(`upload-button-${index}`).click();
+    };
+  
+    const handleImageDrop = (e, index) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      handleImageUpload(file, index);
+    };
+  
+    const handleDragOver = (e) => {
+      e.preventDefault();
+    };
+  
+    const addNewRecordToDB = (insertingData)=> {
+      const response = apiPost(dynamicApiURL, insertingData);
+    }
+  
+    const handleSubmit = async () => {
+      setLoading(true);
+      try {
+        const uploadedImages = await Promise.all(
+          localImages.map(async (localImage, index) => {
+            const fileInput = document.getElementById(`upload-button-${index}`);
+            if (fileInput && fileInput.files[0]) {
+              const uploadedUrl = await uploadImageToCloudinary(fileInput.files[0]);
+              return { [`img${index + 1}`]: uploadedUrl };
+            }
+            return formData.images[index];
+          })
+        );
+  
+        const formattedTime = formData.time.format('hh:mm A');
+        const updatedFormData = {
+          ...formData,
+          images: uploadedImages,
+          time: formattedTime,
+        };
+  
+        console.log('Form Data on Submit:', updatedFormData);
+        addNewRecordToDB(updatedFormData);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error uploading images:', error);
+        setLoading(false);
+      }
+    };
+  
+    const theme = createTheme({
+      components: {
+        MuiTextField: {
+          styleOverrides: {
+            root: {
+              backgroundColor: 'white',
+            },
           },
         },
       },
-    },
-  });
-
-  return (
-    <ThemeProvider theme={theme}>
-       <Box display={'flex'} justifyContent="space-between" mb={1}>
-              <Typography variant="h5" fontWeight={'bold'}>
-                Post Event Table
-              </Typography>
-              <Button
-                variant="contained"
-                onClick={()=>navigate('/nursing/post-event-table')}
-                sx={{ background: 'var(--mainBg)', color: 'white', fontWeight: 'bold' }}
-              >
-                Show Post Event Table
-              </Button>
-      </Box>
-      <Grid container spacing={3}>
-        {/* Image Upload Section */}
-        <Grid item xs={12}>
-          <Typography variant="h6" mb={1}>Browse File or Drag and Drop</Typography>
-          <Grid container spacing={2}>
-            {formData.images.map((imageObj, index) => (
-              <Grid item xs={4} key={index} textAlign="center">
-                <Box
-                  sx={{
-                    width: '100%',
-                    height: '200px',
-                    border: '2px dashed #aaa',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    background: 'rgb(225, 244, 255)'
-                  }}
-                  onClick={() => handleBoxClick(index)} // Trigger file input on Box click
-                  onDrop={(e) => handleImageDrop(e, index)} // Handle image drop
-                  onDragOver={handleDragOver} // Allow drag over
+    });
+  
+    return (
+      <ThemeProvider theme={theme}>
+         <Box display={'flex'} justifyContent="space-between" mb={1}>
+                <Typography variant="h5" fontWeight={'bold'}>
+                  Pre Event Table
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={()=>navigate('/nursing/pre-event-table')}
+                  sx={{ background: 'var(--mainBg)', color: 'white', fontWeight: 'bold' }}
                 >
-                  {imageObj[`img${index + 1}`] ? (
-                    <img
-                      src={imageObj[`img${index + 1}`]}
-                      alt={`upload-preview-${index}`}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  Show Pre Event Table
+                </Button>
+        </Box>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Typography variant="h6" mb={1}>Browse File or Drag and Drop</Typography>
+            <Grid container spacing={2}>
+              {formData.images.map((imageObj, index) => (
+                <Grid item xs={4} key={index} textAlign="center">
+                  <Box
+                    sx={{
+                      width: '100%',
+                      height: '200px',
+                      border: '2px dashed #aaa',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      background: 'rgb(225, 244, 255)'
+                    }}
+                    onClick={() => handleBoxClick(index)}
+                    onDrop={(e) => handleImageDrop(e, index)}
+                    onDragOver={handleDragOver}
+                  >
+                    {localImages[index] ? (
+                      <img
+                        src={localImages[index]}
+                        alt={`upload-preview-${index}`}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <Typography>Upload Image {index + 1}</Typography>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e.target.files[0], index)}
+                      style={{ display: 'none' }}
+                      id={`upload-button-${index}`}
                     />
-                  ) : (
-                    <Typography>Upload Image {index + 1}</Typography>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleImageUpload(e.target.files[0], index)}
-                    style={{ display: 'none' }}
-                    id={`upload-button-${index}`}
-                  />
-                </Box>
-                {imageObj[`img${index + 1}`] && (
+                  </Box>
+                  {localImages[index] && (
                   <Button
                     onClick={() => {
-                      const updatedImages = [...formData.images];
-                      updatedImages[index] = { [`img${index + 1}`]: null };  // Reset image
-                      updateFormData('images', updatedImages); 
+                      // const updatedImages = [...formData.images];
+                      // updatedImages[index] = { [`img${index + 1}`]: null };  // Reset image
+                      // updateFormData('images', updatedImages); 
                       handleBoxClick(index);
                     }}
                     variant="outlined"

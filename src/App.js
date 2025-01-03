@@ -5,17 +5,20 @@ import LoginPage from './components/LoginPage/LoginPage';
 import Dashboard from './common-components/Dashboard/Dashboard';
 import Layout from './common-components/Layout/Layout';
 import { routerData } from './routes';
+import { useEffect } from 'react';
 
 function App() {
+
     return (
         <Router>
             <Routes>
                 {
-                    routerData.map((routeData) => (
+                    routerData.map((routeData, index) => (
                         <Route
+                            key={index}
                             path={routeData.path}
                             element={
-                                <Layout>
+                                <Layout routerJson={routeData}>
                                     {routeData.component}
                                 </Layout>
                             }

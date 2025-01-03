@@ -2,41 +2,47 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { MaterialReactTable } from 'material-react-table';
 import { Box, Button, MenuItem, Stack, Typography } from '@mui/material';
 import { Delete, Edit } from '@mui/icons-material';
-import { TableDataPost } from '../../services/data-const';
+import { TableDataPre } from '../../services/data-const';
 import { useNavigate } from 'react-router-dom';
-import { getAllPostEventsConst, getAllPreEventsConst } from '../../services/api-constants';
 import { apiGet } from '../../services/api-service';
+import { getAllPreEventsConst } from '../../services/api-constants';
+import Loader from '../../common-components/Loader/Loader';
 
 // Sample structured data
-const tableData = TableDataPost;
+const tableData = TableDataPre;
 
-const PostEventTable = () => {
+const PretEventTable = () => {
   // Initialize state for data
   const [data, setData] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate()
 
-  // Simulate fetching data
   useEffect(() => {
-    const fetchData = async () => {
-      // Here you can replace with actual API call
-      setData(tableData); // Set the example data (or use fetched data)
-    };
-
     fetchEvents();
+    setIsLoading(false);
   }, []);
 
-   const fetchEvents = async () => {
-      const response = await apiGet(getAllPostEventsConst)     
-      setData(response.data)
-      console.log(response.data)
-    };
-  
+  const fetchEvents = async () => {
+      const response = await apiGet(getAllPreEventsConst);
+      setData(response['data'])
+   
+  };
+
+
   // Columns definition for the table
   const columns = useMemo(
     () => [
       {
         accessorKey: 'title', // column accessor key (matches data field)
         header: 'Title',
+      },
+      {
+        accessorKey: 'date',
+        header: 'Date',
+      },
+      {
+        accessorKey: 'time',
+        header: 'Time',
       },
       {
         accessorKey: 'description',
@@ -49,12 +55,12 @@ const PostEventTable = () => {
       },
       {
         accessorKey: 'images',
-        header: 'Images',
+        header: 'Image',
         Cell: ({ cell }) => {
           const images = cell.getValue();
           return (
             <div>
-              {images?.map((img, index) =>
+              {images.map((img, index) =>
                 img[`img${index + 1}`] ? (
                   <img
                     key={index}
@@ -89,14 +95,6 @@ const PostEventTable = () => {
         header: 'Speaker 4',
       },
       {
-        accessorKey: 'date',
-        header: 'Date',
-      },
-      {
-        accessorKey: 'time',
-        header: 'Time',
-      },
-      {
         id: 'actions', // Actions column for buttons
         header: 'Actions',
         Cell: ({ row }) => (
@@ -118,7 +116,8 @@ const PostEventTable = () => {
   );
 
   const editAction = (updatingData)=> {
-    navigate('/nursing/post-event-update', {state: {tableData: updatingData}})
+    console.log(updatingData)
+    navigate('/nursing/pre-event-update', {state: {tableData: updatingData}})
   }
 
   const deleteAction = (index)=> {
@@ -130,20 +129,22 @@ const PostEventTable = () => {
   if (!data || data.length === 0) {
     return (
       <Stack>
-      <Box display={'flex'} justifyContent="space-between" mb={3}>
-        <Typography variant="h5" fontWeight={'bold'}>
-          Post Event Table
-        </Typography>
-        <Button
-          variant="contained"
-          onClick={()=> navigate('/nursing/post-event-new')}
-          sx={{ background: 'var(--mainBg)', color: 'white', fontWeight: 'bold' }}
-        >
-          Add Post Event
-        </Button>
-      </Box>
+          <Loader/>
+        <Box display={'flex'} justifyContent="space-between" mb={3}>
+          <Typography variant="h5" fontWeight={'bold'}>
+            Pre Event Table
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={()=> navigate('/nursing/pre-event-new')}
+            sx={{ background: 'var(--mainBg)', color: 'white', fontWeight: 'bold' }}
+          >
+            Add Pre Event
+          </Button>
+        </Box>
         <div>No data available</div>
-      </Stack>);
+        </Stack>
+      )
   }
 
   // Table configuration
@@ -151,14 +152,14 @@ const PostEventTable = () => {
     <Stack>
       <Box display={'flex'} justifyContent="space-between" mb={3}>
         <Typography variant="h5" fontWeight={'bold'}>
-          Post Event Table
+          Pre Event Table
         </Typography>
         <Button
           variant="contained"
-          onClick={()=> navigate('/nursing/post-event-new')}
+          onClick={()=> navigate('/nursing/pre-event-new')}
           sx={{ background: 'var(--mainBg)', color: 'white', fontWeight: 'bold' }}
         >
-          Add Post Event
+          Add Pre Event
         </Button>
       </Box>
 
@@ -168,11 +169,11 @@ const PostEventTable = () => {
         // enableColumnPinning={true} // Enable column pinning
         layoutMode="grid-no-grow" // Constant column widths
         initialState={{
-          columnPinning: { left: ['title'], right: ['actions'] }, // Pinning actions column to the right
+          columnPinning: { left: ['title', 'date'], right: ['actions'] }, // Pinning actions column to the right
         }}
       />
     </Stack>
   );
 };
 
-export default PostEventTable;
+export default PretEventTable;

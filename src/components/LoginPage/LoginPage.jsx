@@ -3,16 +3,23 @@ import { Grid, Paper, Avatar, TextField, Button, Typography, Link, IconButton, I
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
+import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
+    const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
 
     const handleClickShowPassword = () => setShowPassword(!showPassword);
     const handleMouseDownPassword = (event) => event.preventDefault();
 
+    const login = ()=> {
+        navigate('/dashboard')
+    }
+
     const paperStyle = {
         padding: 70,
         height: '40vh',
+        paddingTop: '40px',
         width: 450,
         margin: '20px auto',
         backdropFilter: 'blur(10px)',
@@ -22,7 +29,7 @@ const LoginPage = () => {
         border: '1px solid rgba(255, 255, 255, 0.3)'
     };
     const avatarStyle = { backgroundColor: '#1bbd7e' };
-    const btnStyle = { margin: '8px 0' };
+    const btnStyle = { margin: '8px 0', padding: '10px', borderRadius:'5px' };
     const inputStyle = {
         '& .MuiOutlinedInput-root': {
             '& fieldset': {
@@ -62,6 +69,9 @@ const LoginPage = () => {
                     required 
                     margin="normal" 
                     sx={inputStyle}
+                    InputLabelProps={{
+                        style: { color: 'white' }, // Set the label color to white
+                    }}
                 />
                 <TextField 
                     label='Password' 
@@ -71,6 +81,9 @@ const LoginPage = () => {
                     required 
                     margin="normal" 
                     sx={inputStyle}
+                    InputLabelProps={{
+                        style: { color: 'white' }, // Set the label color to white
+                    }}
                     InputProps={{
                         endAdornment: (
                             <InputAdornment position="end">
@@ -79,6 +92,7 @@ const LoginPage = () => {
                                     onClick={handleClickShowPassword}
                                     onMouseDown={handleMouseDownPassword}
                                     edge="end"
+                                    sx={{color: 'white'}}
                                 >
                                     {showPassword ? <VisibilityOff /> : <Visibility />}
                                 </IconButton>
@@ -86,7 +100,8 @@ const LoginPage = () => {
                         )
                     }}
                 />
-                <Button type='submit' color='primary' variant='contained' style={btnStyle} fullWidth>Sign in</Button>
+                <Button type='submit' color='primary' variant='contained' style={btnStyle} fullWidth
+                    onClick={login}>Sign in</Button>
                 <Typography textAlign={'center'} m={2}>
                     <Link href="#" style={{ color: 'white' }}>
                         Forgot password ?

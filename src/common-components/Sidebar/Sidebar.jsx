@@ -32,13 +32,21 @@ return(
         variant="persistent"
         anchor="left"
     >
-        <List sx={{pt: 5, m: 3, height: '70vh'}}>
+        <List sx={{pt: 8, height: '70vh',overflow: 'hidden'}}>
             {sidebarItems.map((item, index) => (
-                <ListItem button key={index}>
+                item.name && 
+                <>
+                <ListItem sx={{ml:3, mr:3}} button key={index}>
                     <Link to={item.path} style={{ textDecoration: 'none', color: 'white' }}>
                         <ListItemText primary={item.name} />
                     </Link>
                 </ListItem>
+                {item.divider && 
+                    <Divider sx={{backgroundColor:'gray'}}/>
+                }
+                </>
+                
+               
             ))}
         </List>
         <Divider sx={{backgroundColor:'gray'}}/>
