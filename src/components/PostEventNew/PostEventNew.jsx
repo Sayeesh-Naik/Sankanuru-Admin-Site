@@ -9,13 +9,15 @@ import dayjs from 'dayjs';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { apiPost } from '../../services/api-service';
 import { insertPostNewEventConst, updatePostEventConst } from '../../services/api-constants';
+import Loader from '../../common-components/Loader/Loader';
+import PopUp from '../../common-components/PopUp/PopUp';
 
-function PostEventNew({propsData}) {
+function PostEventNew({ propsData }) {
 
   const navigate = useNavigate()
   const location = useLocation();
   const initialData = location.state?.tableData;
-   
+
   const defaultData = {
     title: '',
     description: '',
@@ -34,165 +36,178 @@ function PostEventNew({propsData}) {
   }
 
   const [formData, setFormData] = useState(defaultData);
-  const [loading, setLoading] = useState(false);
+  const [localImages, setLocalImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [dynamicApiURL, setDynamicApiURL] = useState(insertPostNewEventConst);
+  const [popUpInstance, setPopUpInstance] = useState({open: false, status: '', message: '' });
 
-   const [localImages, setLocalImages] = useState([]);
-  
-    useEffect(() => {
-      if (initialData && propsData) {
-        initialData['time'] = dayjs();
-        setFormData(initialData);
-  
-        let allImgData = initialData['images']
-        let dynamicImg = [];
-        allImgData.map((img, index)=>{
-          dynamicImg.push(Object.values(img));
-        })
-        setLocalImages(dynamicImg)
-        setDynamicApiURL(updatePostEventConst)
-      } else {
-        setFormData(defaultData)
-        setDynamicApiURL(insertPostNewEventConst);
-      }
-    }, [propsData]); 
-  
-    const updateFormData = (name, value) => {
-      setFormData((prevState) => ({
-        ...prevState,
-        [name]: value
-      }));
-    };
-  
-    const handleLocalImagePreview = (file, index) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const updatedLocalImages = [...localImages];
-        updatedLocalImages[index] = reader.result;
-        setLocalImages(updatedLocalImages);
-      };
-      reader.readAsDataURL(file);
-    };
-  
-    const handleImageUpload = async (file, index) => {
-      if (file) {
-        handleLocalImagePreview(file, index);
-      }
-    };
-  
-    const handleBoxClick = (index) => {
-      document.getElementById(`upload-button-${index}`).click();
-    };
-  
-    const handleImageDrop = (e, index) => {
-      e.preventDefault();
-      const file = e.dataTransfer.files[0];
-      handleImageUpload(file, index);
-    };
-  
-    const handleDragOver = (e) => {
-      e.preventDefault();
-    };
-  
-    const addNewRecordToDB = (insertingData)=> {
-      const response = apiPost(dynamicApiURL, insertingData);
+
+  useEffect(() => {
+    if (initialData && propsData) {
+      initialData['time'] = dayjs();
+      setFormData(initialData);
+
+      let allImgData = initialData['images']
+      let dynamicImg = [];
+      allImgData.map((img, index) => {
+        dynamicImg.push(Object.values(img));
+      })
+      setLocalImages(dynamicImg)
+      setDynamicApiURL(updatePostEventConst)
+    } else {
+      setFormData(defaultData)
+      setDynamicApiURL(insertPostNewEventConst);
     }
-  
-    const handleSubmit = async () => {
-      setLoading(true);
-      try {
-        const uploadedImages = await Promise.all(
-          localImages.map(async (localImage, index) => {
-            const fileInput = document.getElementById(`upload-button-${index}`);
-            if (fileInput && fileInput.files[0]) {
-              const uploadedUrl = await uploadImageToCloudinary(fileInput.files[0]);
-              return { [`img${index + 1}`]: uploadedUrl };
-            }
-            return formData.images[index];
-          })
-        );
-  
-        const formattedTime = formData.time.format('hh:mm A');
-        const updatedFormData = {
-          ...formData,
-          images: uploadedImages,
-          time: formattedTime,
-        };
-  
-        console.log('Form Data on Submit:', updatedFormData);
-        addNewRecordToDB(updatedFormData);
-        setLoading(false);
-      } catch (error) {
-        console.error('Error uploading images:', error);
-        setLoading(false);
-      }
+  }, [propsData]);
+
+  const updateFormData = (name, value) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      [name]: value
+    }));
+  };
+
+  const handleLocalImagePreview = (file, index) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const updatedLocalImages = [...localImages];
+      updatedLocalImages[index] = reader.result;
+      setLocalImages(updatedLocalImages);
     };
-  
-    const theme = createTheme({
-      components: {
-        MuiTextField: {
-          styleOverrides: {
-            root: {
-              backgroundColor: 'white',
-            },
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageUpload = async (file, index) => {
+    if (file) {
+      handleLocalImagePreview(file, index);
+    }
+  };
+
+  const handleBoxClick = (index) => {
+    document.getElementById(`upload-button-${index}`).click();
+  };
+
+  const handleImageDrop = (e, index) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    handleImageUpload(file, index);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const addNewRecordToDB = (insertingData) => {
+    const response = apiPost(dynamicApiURL, insertingData);
+  }
+
+  const handleSubmit = async () => {
+    setIsLoading(true);
+    try {
+      const uploadedImages = await Promise.all(
+        localImages.map(async (localImage, index) => {
+          const fileInput = document.getElementById(`upload-button-${index}`);
+          if (fileInput && fileInput.files[0]) {
+            const uploadedUrl = await uploadImageToCloudinary(fileInput.files[0]);
+            return { [`img${index + 1}`]: uploadedUrl };
+          }
+          return formData.images[index];
+        })
+      );
+
+      const formattedTime = formData.time.format('hh:mm A');
+      const updatedFormData = {
+        ...formData,
+        images: uploadedImages,
+        time: formattedTime,
+      };
+
+      console.log('Form Data on Submit:', updatedFormData);
+      addNewRecordToDB(updatedFormData);
+      setIsLoading(false);
+      triggerPopup('success', 'Data updated Successfully !!')
+      navigate('/nursing/post-event-table')
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      setIsLoading(false);
+      triggerPopup('error', 'Error Occurs while updating the data !!')
+    }
+  };
+
+  const theme = createTheme({
+    components: {
+      MuiTextField: {
+        styleOverrides: {
+          root: {
+            backgroundColor: 'white',
           },
         },
       },
-    });
-  
-    return (
-      <ThemeProvider theme={theme}>
-         <Box display={'flex'} justifyContent="space-between" mb={1}>
-                <Typography variant="h5" fontWeight={'bold'}>
-                  Pre Event Table
-                </Typography>
-                <Button
-                  variant="contained"
-                  onClick={()=>navigate('/nursing/pre-event-table')}
-                  sx={{ background: 'var(--mainBg)', color: 'white', fontWeight: 'bold' }}
+    },
+  });
+
+  const triggerPopup = (status, message) => {
+    setPopUpInstance({open: true,status,message,});
+    setTimeout(() => {setPopUpInstance((prev) => ({...prev,open: false,}));}, 3000);
+  };
+
+  return (
+    <ThemeProvider theme={theme}>
+
+      {isLoading && <Loader />}
+      {popUpInstance.open && <PopUp status={popUpInstance.status} message={popUpInstance.message}/>}
+
+      <Box display={'flex'} justifyContent="space-between" mb={1}>
+        <Typography variant="h5" fontWeight={'bold'}>
+          Pre Event Table
+        </Typography>
+        <Button
+          variant="contained"
+          onClick={() => navigate('/nursing/pre-event-table')}
+          sx={{ background: 'var(--mainBg)', color: 'white', fontWeight: 'bold' }}
+        >
+          Show All Post Events
+        </Button>
+      </Box>
+      <Grid container spacing={3}>
+        <Grid item xs={12}>
+          <Typography variant="h6" mb={1}>Browse File or Drag and Drop</Typography>
+          <Grid container spacing={2}>
+            {formData.images.map((imageObj, index) => (
+              <Grid item xs={4} key={index} textAlign="center">
+                <Box
+                  sx={{
+                    width: '100%',
+                    height: '200px',
+                    border: '2px dashed #aaa',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    background: 'rgb(225, 244, 255)'
+                  }}
+                  onClick={() => handleBoxClick(index)}
+                  onDrop={(e) => handleImageDrop(e, index)}
+                  onDragOver={handleDragOver}
                 >
-                  Show Pre Event Table
-                </Button>
-        </Box>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Typography variant="h6" mb={1}>Browse File or Drag and Drop</Typography>
-            <Grid container spacing={2}>
-              {formData.images.map((imageObj, index) => (
-                <Grid item xs={4} key={index} textAlign="center">
-                  <Box
-                    sx={{
-                      width: '100%',
-                      height: '200px',
-                      border: '2px dashed #aaa',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      background: 'rgb(225, 244, 255)'
-                    }}
-                    onClick={() => handleBoxClick(index)}
-                    onDrop={(e) => handleImageDrop(e, index)}
-                    onDragOver={handleDragOver}
-                  >
-                    {localImages[index] ? (
-                      <img
-                        src={localImages[index]}
-                        alt={`upload-preview-${index}`}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <Typography>Upload Image {index + 1}</Typography>
-                    )}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e.target.files[0], index)}
-                      style={{ display: 'none' }}
-                      id={`upload-button-${index}`}
+                  {localImages[index] ? (
+                    <img
+                      src={localImages[index]}
+                      alt={`upload-preview-${index}`}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
-                  </Box>
-                  {localImages[index] && (
+                  ) : (
+                    <Typography>Upload Image {index + 1}</Typography>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleImageUpload(e.target.files[0], index)}
+                    style={{ display: 'none' }}
+                    id={`upload-button-${index}`}
+                  />
+                </Box>
+                {localImages[index] && (
                   <Button
                     onClick={() => {
                       // const updatedImages = [...formData.images];
@@ -202,7 +217,7 @@ function PostEventNew({propsData}) {
                     }}
                     variant="outlined"
                     fullWidth
-                    style={{ marginTop: '10px', background: 'var(--mainBg)', color: 'white'}}
+                    style={{ marginTop: '10px', background: 'var(--mainBg)', color: 'white' }}
                   >
                     Re-upload
                   </Button>
@@ -287,7 +302,7 @@ function PostEventNew({propsData}) {
 
         {/* Submit Button */}
         <Grid item xs={12} style={{ textAlign: 'right' }}>
-          <Button variant="contained" color="primary" onClick={handleSubmit}>
+          <Button variant="contained" color="primary" onClick={handleSubmit} sx={{ background: 'var(--mainBg)', color: 'white', fontWeight: 'bold'}}>
             Submit
           </Button>
         </Grid>

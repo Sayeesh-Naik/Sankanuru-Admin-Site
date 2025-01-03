@@ -37,10 +37,9 @@ function PreEventNew({propsData}) {
   const [isLoading, setIsLoading] = useState(false);
   const [localImages, setLocalImages] = useState([]);
   const [dynamicApiURL, setDynamicApiURL] = useState(insertPreNewEventConst);
-  const [popUpInstance, setPopUpInstance] = useState({open: false, status: 'error', message: '' });
+  const [popUpInstance, setPopUpInstance] = useState({open: false, status: '', message: '' });
 
   useEffect(() => {
-    console.log('prevv = ', initialData)
 
     if (initialData && propsData) {
       initialData['time'] = dayjs();
@@ -61,7 +60,6 @@ function PreEventNew({propsData}) {
       setDynamicApiURL(insertPreNewEventConst)
     }
 
-    console.log('dataneww = ', formData)
   }, [initialData]); 
 
   const updateFormData = (name, value) => {
@@ -130,12 +128,19 @@ function PreEventNew({propsData}) {
 
       addNewRecordToDB(updatedFormData);
       setIsLoading(false);
-      setPopUpInstance({open: true, status: 'success', message: 'Data Updated Successfully !!'})
+      triggerPopup('success', 'Data Updated Successfully !!')
+      navigate('/nursing/pre-event-table')
 
     } catch (error) {
       console.error('Error uploading images:', error);
       setIsLoading(false);
+      triggerPopup('error', 'Error Occurs while updating the data !!')
     }
+  };
+
+  const triggerPopup = (status, message) => {
+    setPopUpInstance({open: true,status,message,});
+    setTimeout(() => {setPopUpInstance((prev) => ({...prev,open: false,}));}, 3000);
   };
 
   const theme = createTheme({
@@ -149,6 +154,8 @@ function PreEventNew({propsData}) {
       },
     },
   });
+
+
 
   return (
     <ThemeProvider theme={theme}>
@@ -164,7 +171,7 @@ function PreEventNew({propsData}) {
                 onClick={()=>navigate('/nursing/pre-event-table')}
                 sx={{ background: 'var(--mainBg)', color: 'white', fontWeight: 'bold' }}
               >
-                Show Pre Event Table
+                Show All Pre Events
               </Button>
       </Box>
       <Grid container spacing={3}>
@@ -300,7 +307,7 @@ function PreEventNew({propsData}) {
 
         {/* Submit Button */}
         <Grid item xs={12} style={{ textAlign: 'right' }}>
-          <Button variant="contained" color="primary" onClick={handleSubmit}>
+          <Button variant="contained" color="primary" onClick={handleSubmit}  sx={{ background: 'var(--mainBg)', color: 'white', fontWeight: 'bold'}}>
             Submit
           </Button>
         </Grid>

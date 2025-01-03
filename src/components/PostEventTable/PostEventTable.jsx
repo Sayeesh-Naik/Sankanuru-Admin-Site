@@ -6,6 +6,7 @@ import { TableDataPost } from '../../services/data-const';
 import { useNavigate } from 'react-router-dom';
 import { getAllPostEventsConst, getAllPreEventsConst } from '../../services/api-constants';
 import { apiGet } from '../../services/api-service';
+import Loader from '../../common-components/Loader/Loader';
 
 // Sample structured data
 const tableData = TableDataPost;
@@ -13,7 +14,9 @@ const tableData = TableDataPost;
 const PostEventTable = () => {
   // Initialize state for data
   const [data, setData] = useState([]);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  
 
   // Simulate fetching data
   useEffect(() => {
@@ -26,9 +29,10 @@ const PostEventTable = () => {
   }, []);
 
    const fetchEvents = async () => {
+      setIsLoading(true)
       const response = await apiGet(getAllPostEventsConst)     
       setData(response.data)
-      console.log(response.data)
+      setIsLoading(false)
     };
   
   // Columns definition for the table
@@ -37,6 +41,14 @@ const PostEventTable = () => {
       {
         accessorKey: 'title', // column accessor key (matches data field)
         header: 'Title',
+      },
+      {
+        accessorKey: 'date',
+        header: 'Date',
+      },
+      {
+        accessorKey: 'time',
+        header: 'Time',
       },
       {
         accessorKey: 'description',
@@ -54,21 +66,34 @@ const PostEventTable = () => {
           const images = cell.getValue();
           return (
             <div>
-              {images?.map((img, index) =>
-                img[`img${index + 1}`] ? (
-                  <img
-                    key={index}
-                    src={img[`img${index + 1}`]}
-                    alt={`img-${index}`}
-                    style={{ width: '50px', height: '50px', objectFit: 'cover', marginRight: '5px' }}
-                  />
-                ) : (
-                  <span key={index}>
-                    {/* No Image */}
-                  </span>
-                )
-              )}
+              {images.map((img, index) => {
+                const imageUrl = img[`img${index + 1}`];
+
+                if (imageUrl) {
+                  // Modify URL to compress and resize using Cloudinary parameters
+                  const cloudinaryOptimizedUrl = imageUrl.replace('/upload/', '/upload/w_100,h_100,q_auto,f_auto/');
+
+                  return (
+                    <img
+                      key={index}
+                      src={cloudinaryOptimizedUrl}
+                      alt={`img-${index}`}
+                      width="50"
+                      height="50"
+                      loading="lazy"
+                      style={{
+                        objectFit: 'cover',
+                        marginRight: '5px',
+                        borderRadius: '4px',
+                      }}
+                    />
+                  );
+                }
+
+                return <span key={index}>{/* No Image */}</span>;
+              })}
             </div>
+
           );
         },
       },
@@ -87,14 +112,6 @@ const PostEventTable = () => {
       {
         accessorKey: 'speaker4',
         header: 'Speaker 4',
-      },
-      {
-        accessorKey: 'date',
-        header: 'Date',
-      },
-      {
-        accessorKey: 'time',
-        header: 'Time',
       },
       {
         id: 'actions', // Actions column for buttons
@@ -130,6 +147,9 @@ const PostEventTable = () => {
   if (!data || data.length === 0) {
     return (
       <Stack>
+
+      {isLoading && <Loader/>}
+
       <Box display={'flex'} justifyContent="space-between" mb={3}>
         <Typography variant="h5" fontWeight={'bold'}>
           Post Event Table
@@ -139,7 +159,7 @@ const PostEventTable = () => {
           onClick={()=> navigate('/nursing/post-event-new')}
           sx={{ background: 'var(--mainBg)', color: 'white', fontWeight: 'bold' }}
         >
-          Add Post Event
+          Add New Post Event
         </Button>
       </Box>
         <div>No data available</div>
@@ -149,6 +169,9 @@ const PostEventTable = () => {
   // Table configuration
   return (
     <Stack>
+
+      {isLoading && <Loader />}
+
       <Box display={'flex'} justifyContent="space-between" mb={3}>
         <Typography variant="h5" fontWeight={'bold'}>
           Post Event Table
@@ -158,7 +181,7 @@ const PostEventTable = () => {
           onClick={()=> navigate('/nursing/post-event-new')}
           sx={{ background: 'var(--mainBg)', color: 'white', fontWeight: 'bold' }}
         >
-          Add Post Event
+          Add New Post Event
         </Button>
       </Box>
 

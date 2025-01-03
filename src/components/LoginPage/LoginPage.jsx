@@ -29,7 +29,7 @@ const LoginPage = () => {
         border: '1px solid rgba(255, 255, 255, 0.3)'
     };
     const avatarStyle = { backgroundColor: '#1bbd7e' };
-    const btnStyle = { margin: '8px 0', padding: '10px', borderRadius:'5px' };
+    const btnStyle = { margin: '8px 0', padding: '10px', borderRadius:'5px', backgroundColor:'#379b9f', color: 'white', fontWeight:'bold' };
     const inputStyle = {
         '& .MuiOutlinedInput-root': {
             '& fieldset': {

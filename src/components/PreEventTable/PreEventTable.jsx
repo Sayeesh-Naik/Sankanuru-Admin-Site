@@ -60,21 +60,34 @@ const PretEventTable = () => {
           const images = cell.getValue();
           return (
             <div>
-              {images.map((img, index) =>
-                img[`img${index + 1}`] ? (
-                  <img
-                    key={index}
-                    src={img[`img${index + 1}`]}
-                    alt={`img-${index}`}
-                    style={{ width: '50px', height: '50px', objectFit: 'cover', marginRight: '5px' }}
-                  />
-                ) : (
-                  <span key={index}>
-                    {/* No Image */}
-                  </span>
-                )
-              )}
+              {images.map((img, index) => {
+                const imageUrl = img[`img${index + 1}`];
+
+                if (imageUrl) {
+                  // Modify URL to compress and resize using Cloudinary parameters
+                  const cloudinaryOptimizedUrl = imageUrl.replace('/upload/', '/upload/w_100,h_100,q_auto,f_auto/');
+
+                  return (
+                    <img
+                      key={index}
+                      src={cloudinaryOptimizedUrl}
+                      alt={`img-${index}`}
+                      width="50"
+                      height="50"
+                      loading="lazy"
+                      style={{
+                        objectFit: 'cover',
+                        marginRight: '5px',
+                        borderRadius: '4px',
+                      }}
+                    />
+                  );
+                }
+
+                return <span key={index}>{/* No Image */}</span>;
+              })}
             </div>
+
           );
         },
       },
@@ -159,7 +172,7 @@ const PretEventTable = () => {
           onClick={()=> navigate('/nursing/pre-event-new')}
           sx={{ background: 'var(--mainBg)', color: 'white', fontWeight: 'bold' }}
         >
-          Add Pre Event
+          Add New Pre Event
         </Button>
       </Box>
 

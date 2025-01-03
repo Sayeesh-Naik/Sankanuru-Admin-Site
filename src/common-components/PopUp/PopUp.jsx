@@ -2,18 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { Snackbar, Alert } from '@mui/material';
 
 const PopUp = ({ status, message }) => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    // Auto-hide after 3 seconds
-    const timer = setTimeout(() => {
-      setOpen(false);
-    }, 3000); // 3 seconds
+    // Reopen Snackbar when status or message changes
+    if (status && message) {
+      setOpen(true);
+      const timer = setTimeout(() => {
+        setOpen(false);
+      }, 3000); // Auto-hide after 3 seconds
 
-    return () => clearTimeout(timer); // Cleanup timer on component unmount
-  }, []);
+      return () => clearTimeout(timer); // Cleanup timer
 
-  // Custom styles based on the status
+    }
+  }, [status, message]);  // Trigger effect when status or message changes
+
   const getBackgroundColor = () => {
     switch (status) {
       case 'success':
@@ -32,16 +35,17 @@ const PopUp = ({ status, message }) => {
   return (
     <Snackbar
       open={open}
-      autoHideDuration={3000} // Auto-hide after 3 seconds
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      autoHideDuration={3000}
+      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
     >
       <Alert
         severity={status}
         sx={{
           width: '100%',
-          minWidth: '200px',
+          minWidth: '300px',
+          marginTop: '55px',
           color: 'white',
-          backgroundColor: getBackgroundColor(), // Dynamic background color
+          backgroundColor: getBackgroundColor(),
         }}
       >
         {message}
